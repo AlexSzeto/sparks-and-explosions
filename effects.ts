@@ -16,7 +16,8 @@ enum PresetShape {
 /**
  * Provides a few extra effects based on particles exploding out of a center point
  */
-//% groups="['Effects', 'Colors', 'Sizes']"
+//% color=0x883322 icon="\uf06d" advanced=true
+//% groups="['Create', 'Data']"
 namespace effects {
     export class NumberRange {
         constructor(
@@ -72,9 +73,10 @@ namespace effects {
     /**
      * Create preset table of sizes based on expected effect shape
      */
-    //% group="Sizes"
+    //% blockNamespace=arrays
+    //% group="Create" color=0xff9008
     //% blockId="presetSizeTablePicker"
-    //% block="shape of $shape"
+    //% block="sizes matching shape $shape"
     export function createPresetSizeTable(shape: PresetShape): number[] {
         return PRESET_SIZE_LUT[shape]
     }
@@ -82,9 +84,10 @@ namespace effects {
     /**
      * Create a set of numbers that shrinks
      */
-    //% group="Sizes"
+    //% blockNamespace=arrays
+    //% group="Create" color=0xff9008
     //% blockId="shrinkingTablePicker"
-    //% block="shrink from $max"
+    //% block="array of numbers shrinking from $max"
     //% max.min=1 max.max=100 max.defl=16
     export function createShrinkingSizes(max: number): number[] {
         const result = []
@@ -97,9 +100,10 @@ namespace effects {
     /**
      * Create a set of numbers that grows
      */
-    //% group="Sizes"
+    //% blockNamespace=arrays
+    //% group="Create" color=0xff9008
     //% blockId="growingTablePicker"
-    //% block="grow to $max"
+    //% block="array of numbers growing to $max"
     //% max.min=1 max.max=100 max.defl=16
     export function createGrowingSizes(max: number): number[] {
         const result = []
@@ -112,7 +116,7 @@ namespace effects {
     /**
      * Create custom effect data
      */
-    //% group="Effects"
+    //% group="Data"
     //% blockSetVariable=myEffect
     //% block="custom effect|colors $colorLUT sizes $sizeLUT spawn $spawn spread $spread duration $duration"
     //% colorLUT.shadow="lists_create_with" colorLUT.defl="colorindexpicker"
@@ -148,9 +152,10 @@ namespace effects {
     /**
      * Create preset color table
      */
-    //% group="Colors"
+    //% blockNamespace=arrays
+    //% group="Create" color=0xff9008
     //% blockId="presetColorTablePicker"
-    //% block="$color colored"
+    //% block="array of $color colors"
     export function createPresetColorTable(color: PresetColor): number[] {
         return PRESET_COLOR_LUT[color]
     }
@@ -158,23 +163,56 @@ namespace effects {
     /**
      * Create single color table
      */
-    //% group="Colors"
+    //% blockNamespace=arrays
+    //% group="Create" color=0xff9008
     //% blockId="singleColorTablePicker"
-    //% block="$color colored"
+    //% block="array of $color color"
     //% color.shadow="colorindexpicker" color.defl=1
     export function createSingleColorTable(color: number): number[] {
         return [color]
     }
 
     /**
-     * Create effect using preset settings
+     * Create effect using preset colors and shapes
      */
-    //% group="Effects"
+    //% group="Data"
     //% inlineInputMode=inline
-    //% blockId="createPresetEffectData"
-    //% block="effect $colorLUT $shape|| $size px wide"
-    //% colorLUT.shadow="presetColorTablePicker"
+    //% blockId="createPresetColorEffectData"
+    //% block="preset effect $color $shape|| $size px wide"
     //% size.min=20 size.max=100 size.defl=50
+    export function createPresetColorEffectData(
+        color: PresetColor,
+        shape: PresetShape,
+        size: number = 50,
+    ) {
+        return createPresetEffectData(
+            createPresetColorTable(color),
+            shape,
+            size,
+        )
+    }
+
+    /**
+     * Create effect using a single color and preset shapes
+     */
+    //% group="Data"
+    //% inlineInputMode=inline
+    //% blockId="createSingleColorEffectData"
+    //% block="preset effect $color $shape|| $size px wide"
+    //% color.shadow="colorindexpicker"
+    //% size.min=20 size.max=100 size.defl=50
+    export function createSingleColorEffectData(
+        color: number,
+        shape: PresetShape,
+        size: number = 50,
+    ) {
+        return createPresetEffectData(
+            createSingleColorTable(color),
+            shape,
+            size,
+        )
+    }
+
     export function createPresetEffectData(
         colorLUT: number[],
         shape: PresetShape,
@@ -219,8 +257,8 @@ namespace effects {
     /**
      * Start an explosive effect at a position on the stage
      */
-    //% group="Effects"
     //% inlineInputMode=inline
+    //% group="Create"
     //% blockId="createExplosiveEffectAtPosition"
     //% blockSetVariable=myAnchor
     //% block="start $effect at x $x y $y for $duration ms|| density $density"
@@ -256,8 +294,8 @@ namespace effects {
     /**
      * Start an explosive effect on a sprite
      */
-    //% group="Effects"
     //% inlineInputMode=inline
+    //% group="Create"
     //% blockId="createExplosiveEffectOnSprite"
     //% block="$sprite start $effect for $duration ms|| density $density"
     //% sprite.shadow=variables_get sprite.defl=mySprite
