@@ -1,184 +1,173 @@
-// Add your code here
-namespace particles {
-    let cachedSin: Fx8[]
-    let cachedCos: Fx8[]
-    let cachedFourPixelCircle: Image
-    let cachedSixPixelCircle: Image
-
-    const NUM_SLICES = 90
-    const MAX_LUT_SLICES = 20
-    const MAX_TWEEN_SLICES = 20
-    const TWEEN_OUT_BREAKPOINT = 10
-    const galois = new Math.FastRandom();
-
-    function initCache() {
-        if (!cachedSin) {
-            cachedSin = particles.cacheSin(NUM_SLICES)
-            cachedCos = particles.cacheCos(NUM_SLICES)
-            cachedFourPixelCircle = 
-            img`
-            . F F .
-            F F F F
-            F F F F
-            . F F .
-            `
-            cachedSixPixelCircle = 
-            img`
-            . . F F . .
-            . F F F F .
-            F F F F F F
-            F F F F F F
-            . F F F F .
-            . . F F . .
-            `            
-        }
-    }
-
-    function createRandomRangeLUT(min:number, max:number) {
-        let table: Fx8[] = []
-        for(let i=0; i<MAX_LUT_SLICES; i++) {
-            table.push(Fx8(min + (max - min) * i / MAX_LUT_SLICES))
-        }
-        return table
-    }
-
-
-    class CircularParticleFactory extends particles.ParticleFactory {
-        private sizeSlice: number
-        private colorSlice: number
-        private tweenOutSlice: number
-
-        private initSpreadLUT: Fx8[]
-        private travelDistanceLUT: Fx8[]
-        private smallerCirclesLUT: Image[]
-
-        constructor(
-            private colorLifespanLUT: number[],
-            private sizeLifespanLUT: number[],
-            private minLifespan: number,
-            private maxLifespan: number,
-            minInitSpread: number,
-            maxInitSpread: number,
-            minTravelDistance: number,
-            maxTravelDistance: number,
-        ) {
-            super()
-            initCache()
-            this.colorLifespanLUT.reverse()
-            this.sizeLifespanLUT.reverse()
-            this.sizeSlice = this.maxLifespan / this.sizeLifespanLUT.length
-            this.colorSlice = this.maxLifespan / this.colorLifespanLUT.length
-            this.tweenOutSlice = this.maxLifespan / MAX_TWEEN_SLICES
-            this.initSpreadLUT = createRandomRangeLUT(minInitSpread, maxInitSpread)
-            this.travelDistanceLUT = createRandomRangeLUT(minTravelDistance * 1000 / maxLifespan, maxTravelDistance * 1000 / maxLifespan)
-        }
-
-        createParticle(anchor: particles.ParticleAnchor) {
-            const p: particles.Particle = super.createParticle(anchor);
-
-            p.lifespan = galois.randomRange(this.minLifespan, this.maxLifespan - 1);
-            p.data = TWEEN_OUT_BREAKPOINT * this.tweenOutSlice
-
-            const angle = galois.randomRange(0, NUM_SLICES)
-            const initSpreadMultiplier = galois.pickRandom(this.initSpreadLUT)
-            const velocityMultiplier = galois.pickRandom(this.travelDistanceLUT)
-
-            p._x = Fx.add(p._x, Fx.mul(cachedCos[angle], initSpreadMultiplier))
-            p._y = Fx.add(p._y, Fx.mul(cachedSin[angle], initSpreadMultiplier))
-            p.vx = Fx.mul(cachedCos[angle], velocityMultiplier)
-            p.vy = Fx.mul(cachedSin[angle], velocityMultiplier)
-
-            return p;
-        }
-
-        drawParticle(p: particles.Particle, x: Fx8, y: Fx8) {
-            const size = this.sizeLifespanLUT[Math.floor(p.lifespan / this.sizeSlice)]
-            const radius = Fx.div(Fx8(size), Fx.twoFx8)
-
-            const colorIndex = Math.floor(p.lifespan / this.colorSlice)
-            const color = this.colorLifespanLUT[colorIndex]
-            const coolerColor = colorIndex === 0 ? color : this.colorLifespanLUT[colorIndex - 1]
-            switch (size) {
-                case 0:
-                    break
-                case 1:
-                    screen.setPixel(Fx.toInt(x), Fx.toInt(y), color)
-                    break
-                case 2:
-                    screen.drawRect(Fx.toInt(x), Fx.toInt(y), 2, 2, color)
-                    break
-                case 3:
-                case 4:
-                    const fourPixelImage = cachedFourPixelCircle.clone()
-                    fourPixelImage.replace(0xF, color)
-                    screen.drawTransparentImage(fourPixelImage, Fx.toInt(Fx.sub(x, Fx.oneFx8)), Fx.toInt(Fx.sub(y, Fx.oneFx8)))
-                    break
-                case 5:
-                case 6:
-                    const sixPixelImage = cachedSixPixelCircle.clone()
-                    sixPixelImage.replace(0xF, color)
-                    screen.drawTransparentImage(sixPixelImage, Fx.toInt(Fx.sub(x, Fx.twoFx8)), Fx.toInt(Fx.sub(y, Fx.twoFx8)))
-                    break
-                case 7:
-                case 8:
-                case 9:
-                case 10:
-                    screen.fillCircle(Fx.toInt(x), Fx.toInt(y), Fx.toInt(radius), color)
-                    break
-                default:
-                    screen.fillCircle(Fx.toInt(x), Fx.toInt(y), Fx.toInt(radius), coolerColor)
-                    screen.fillCircle(Fx.toInt(x), Fx.toInt(y), Fx.toInt(Fx.sub(radius, Fx.twoFx8)), color)
-                    break
-            }
-
-            while(p.lifespan < p.data) {
-                p.data -= this.tweenOutSlice
-                p.vx = Fx.div(Fx.mul(p.vx, Fx8(90)), Fx8(100))
-                p.vy = Fx.div(Fx.mul(p.vy, Fx8(90)), Fx8(100))
-            }
-        }
-    }
-
-    export function createCircularEffect(
-        anchor: particles.ParticleAnchor,
-        z: number,
-        numParticles: number,
-        useParticlesPerSecond: boolean,
-        lifespan: number,
-        
-        colorLifespanLUT: number[],
-        sizeLifespanLUT: number[],
-        minParticleLifespan: number,
-        maxParticleLifespan: number,
-        minInitSpread: number,
-        maxInitSpread: number,
-        minTravelDistance: number,
-        maxTravelDistance: number,
-    ): particles.ParticleSource[] {
-        const sources: particles.ParticleSource[] = [];
-
-        const factory = new CircularParticleFactory(
-            colorLifespanLUT,
-            sizeLifespanLUT,
-            minParticleLifespan,
-            maxParticleLifespan,
-            minInitSpread,
-            maxInitSpread,
-            minTravelDistance,
-            maxTravelDistance,
-        );
-
-        const src = new particles.ParticleSource(
-            anchor,
-            useParticlesPerSecond
-                ? numParticles
-                : numParticles * 1000 / lifespan,
-            factory
-        )                
-            
-        src.lifespan = lifespan
-        src.z = z
-        sources.push(src);
-        return sources;
-    }
+enum PresetColor {
+    fire,
+    ice,
+    toxic,
+    electric,
+    poison,
+    smoke,
 }
+
+enum PresetShape {
+    spark,
+    explosion,
+    cloud,
+}
+
+/**
+ * Provides a few extra effects based on particles exploding out of a center point
+ */
+namespace effects {
+    export class NumberRange {
+        constructor(
+            public min: number,
+            public max: number
+        ) {
+            if (min > max) {
+                this.min = max
+                this.max = min
+            }
+        }
+    }
+
+    /**
+     * Create a range of time to randomly pick from
+     */
+    //% blockId="timeRangePicker"
+    //% blockHidden=true
+    //% block="between $min and $max ms"
+    //% min.defl=200 max.defl=400
+    //% min.shadow="timePicker" max.shadow="timePicker"
+    export function createTimeRange(min: number, max: number): NumberRange {
+        return new NumberRange(min, max)
+    }
+
+    /**
+     * Create a range of pixels to randomly pick from
+     */
+    //% blockId="pixelRangePicker"
+    //% blockHidden=true
+    //% block="between $min and $max" px
+    //% min.min=0 min.max=100 min.defl=0
+    //% max.min=0 max.max=100 max.defl=20
+    export function createPixelRange(min: number, max: number): NumberRange {
+        return new NumberRange(min, max)
+    }
+
+    export class EffectData {
+        constructor(
+            public colorLUT: number[],
+            public sizeLUT: number[],
+            public spawn: NumberRange,
+            public spread: NumberRange,
+            public duration: NumberRange,
+        ) { }
+    }
+
+    /**
+     * Create fully custom effect data
+     */
+    //% blockSetVariable=myEffect
+    //% block="custom effect data|colors $colorLUT sizes $sizeLUT spawn $spawn spread $spread duration $duration"
+    //% colorLUT.shadow="lists_create_with" colorLUT.defl="colorindexpicker"
+    //% spawn.shadow="pixelRangePicker"
+    //% spread.shadow="pixelRangePicker"
+    //% duration.shadow="timeRangePicker"
+    export function createCustomEffectData(
+        colorLUT: number[],
+        sizeLUT: number[],
+        spawn: NumberRange,
+        spread: NumberRange,
+        duration: NumberRange,
+    ) {
+        return new EffectData(
+            colorLUT,
+            sizeLUT,
+            spawn,
+            spread,
+            duration
+        )
+    }
+
+    /**
+     * Create effect using preset settings
+     */
+    //% inlineInputMode=inline
+    //% blockId="createPresetEffectData"
+    //% block="effect $color $shape|| $size px wide"
+    //% size.min=10 size.max=100 size.defl=48
+    export function createPresetEffectData(
+        color: PresetColor,
+        shape: PresetShape,
+        size: number = 48,
+    ) {
+        const colorLUT = [
+            [1, 5, 4, 2, 10, 10],
+            [1, 9, 9, 6, 8, 8],
+            [5, 7, 7, 6, 6, 8],
+            [1, 1, 5, 5, 4, 14],
+            [3, 11, 11, 10, 10, 12],
+            [1, 1, 13, 13, 3, 11]
+        ][color]
+        const radius = Math.floor(size / 2)
+        switch (shape) {
+            case PresetShape.spark:
+                return new EffectData(
+                    colorLUT,
+                    [6, 4, 2, 1],
+                    new NumberRange(0, Math.floor(size * 0.25)),
+                    new NumberRange(Math.floor(size * 0.5), Math.floor(size * 0.75)),
+                    new NumberRange(300, 400)
+                )
+            case PresetShape.explosion:
+                return new EffectData(
+                    colorLUT,
+                    [10, 16, 14, 12, 6, 4, 2, 1],
+                    new NumberRange(0, Math.floor(size * 0.50)),
+                    new NumberRange(Math.floor(size * 0.25), Math.floor(size * 0.5)),
+                    new NumberRange(300, 600)
+                )
+            case PresetShape.cloud:
+                return new EffectData(
+                    colorLUT,
+                    [10, 12, 16, 14, 12, 6, 2, 1],
+                    new NumberRange(0, Math.floor(size * 0.75)),
+                    new NumberRange(Math.floor(size * 0.10), Math.floor(size * 0.25)),
+                    new NumberRange(600, 800)
+                )
+        }
+    }
+
+    /**
+     * Start an explosive effect at a position on the stage
+     */
+    //% inlineInputMode=inline
+    //% blockId="createExplosiveEffectAtPosition"
+    //% block="start $effect at x $x y $y for $duration ms|| density $density"
+    //% effect.shadow=variables_get effect.defl=myEffect
+    //% x.shadow="positionPicker" x.defl=75
+    //% y.shadow="positionPicker" y.defl=55
+    //% duration.shadow="timePicker" $duration.defl=300
+    //% density.min=10 density.max=50 density.defl=20
+    export function startExplosiveEffectAtPosition(
+        effect: EffectData,
+        x: number,
+        y: number,
+        duration: number,
+        density: number = 20,
+    ) {
+        createCircularEffect(
+            { x: x, y: y },
+            duration,
+            effect.colorLUT,
+            effect.sizeLUT,
+            duration < 500 ? duration / density : density,
+            effect.duration.min,
+            effect.duration.max,
+            effect.spawn.min,
+            effect.spawn.max,
+            effect.spread.min,
+            effect.spread.max
+        )
+    }
+
+} 
