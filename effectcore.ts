@@ -80,7 +80,7 @@ namespace effects {
             p.lifespan = galois.randomRange(this.minLifespan, this.maxLifespan - 1);
             p.data = TWEEN_OUT_BREAKPOINT * this.tweenOutSlice
 
-            const angle = galois.randomRange(0, NUM_SLICES)
+            const angle = galois.randomRange(0, NUM_SLICES-1)
             const initSpreadMultiplier = galois.pickRandom(this.initSpreadLUT)
             const velocityMultiplier = galois.pickRandom(this.travelDistanceLUT)
 
@@ -173,7 +173,7 @@ namespace effects {
             factory
         )
 
-        src.lifespan = Math.max(50, lifespan- maxPLifespan)
+        src.lifespan = Math.max(50, lifespan - maxPLifespan)
         return src
     }
 }
