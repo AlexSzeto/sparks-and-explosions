@@ -16,9 +16,25 @@ enum PresetShape {
 /**
  * Provides a few extra effects based on particles exploding out of a center point
  */
-//% color=0x883322 icon="\uf06d" advanced=true
-//% groups="['Create', 'Data']"
+//% color=0x82047e icon="\uf06d" advanced=true
+//% groups="['Colors', 'Sizes', 'Data', 'Create']"
 namespace effects {
+
+    const PRESET_COLOR_LUT = [
+        [1, 5, 4, 2, 10, 10],
+        [1, 1, 1, 9, 9, 6, 8],
+        [5, 7, 7, 6, 6, 8],
+        [1, 5, 4, 5, 1, 5, 1, 5, 1, 5, 4],
+        [10, 10, 12],
+        [1, 1, 13, 11]
+    ]
+
+    const PRESET_SIZE_LUT = [
+        [6, 6, 4, 2, 1],
+        [10, 16, 14, 12, 6, 4, 2, 1],
+        [4, 16, 14, 12, 14, 16, 12, 8, 4],
+    ]
+
     export class NumberRange {
         constructor(
             public min: number,
@@ -39,7 +55,7 @@ namespace effects {
     //% block="between $min and $max ms"
     //% min.defl=200 max.defl=400
     //% min.shadow="timePicker" max.shadow="timePicker"
-    export function createTimeRange(min: number, max: number): NumberRange {
+    export function __createTimeRange(min: number, max: number): NumberRange {
         return new NumberRange(min, max)
     }
 
@@ -51,7 +67,7 @@ namespace effects {
     //% block="between $min and $max px away"
     //% min.min=0 min.max=50 min.defl=0
     //% max.min=0 max.max=50 max.defl=20
-    export function createPixelRange(min: number, max: number): NumberRange {
+    export function __createPixelRange(min: number, max: number): NumberRange {
         return new NumberRange(min, max)
     }
 
@@ -65,60 +81,12 @@ namespace effects {
         ) { }
     }
 
-    const PRESET_SIZE_LUT = [
-        [6, 6, 4, 2, 1],
-        [10, 16, 14, 12, 6, 4, 2, 1],
-        [4, 16, 14, 12, 14, 16, 12, 8, 4],
-    ]
-    /**
-     * Create preset table of sizes based on expected effect shape
-     */
-    //% blockNamespace=arrays
-    //% group="Create" color=0xff9008
-    //% blockId="presetSizeTablePicker"
-    //% block="sizes matching shape $shape"
-    export function createPresetSizeTable(shape: PresetShape): number[] {
-        return PRESET_SIZE_LUT[shape]
-    }
-
-    /**
-     * Create a set of numbers that shrinks
-     */
-    //% blockNamespace=arrays
-    //% group="Create" color=0xff9008
-    //% blockId="shrinkingTablePicker"
-    //% block="array of numbers shrinking from $max"
-    //% max.min=1 max.max=100 max.defl=16
-    export function createShrinkingSizes(max: number): number[] {
-        const result = []
-        for(let size=max; size > 0; size--) {
-            result.push(size)
-        }
-        return result
-    }
-
-    /**
-     * Create a set of numbers that grows
-     */
-    //% blockNamespace=arrays
-    //% group="Create" color=0xff9008
-    //% blockId="growingTablePicker"
-    //% block="array of numbers growing to $max"
-    //% max.min=1 max.max=100 max.defl=16
-    export function createGrowingSizes(max: number): number[] {
-        const result = []
-        for (let size = 1; size <= max; size++) {
-            result.push(size)
-        }
-        return result
-    }
-
     /**
      * Create custom effect data
      */
     //% group="Data"
     //% blockSetVariable=myEffect
-    //% block="custom effect|colors $colorLUT sizes $sizeLUT spawn $spawn spread $spread duration $duration"
+    //% block="custom effect set|colors to $colorLUT sizes to $sizeLUT initial spread $spawn over time spread $spread duration $duration"
     //% colorLUT.shadow="lists_create_with" colorLUT.defl="colorindexpicker"
     //% sizeLUT.shadow="presetSizeTablePicker"
     //% spawn.shadow="pixelRangePicker"
@@ -138,38 +106,6 @@ namespace effects {
             spread,
             duration
         )
-    }
-
-    const PRESET_COLOR_LUT = [
-        [1, 5, 4, 2, 10, 10],
-        [1, 1, 1, 9, 9, 6, 8],
-        [5, 7, 7, 6, 6, 8],
-        [1, 5, 4, 5, 1, 5, 1, 5, 1, 5, 4],
-        [10, 10, 12],
-        [1, 1, 13, 11]
-    ]
-
-    /**
-     * Create preset color table
-     */
-    //% blockNamespace=arrays
-    //% group="Create" color=0xff9008
-    //% blockId="presetColorTablePicker"
-    //% block="array of $color colors"
-    export function createPresetColorTable(color: PresetColor): number[] {
-        return PRESET_COLOR_LUT[color]
-    }
-
-    /**
-     * Create single color table
-     */
-    //% blockNamespace=arrays
-    //% group="Create" color=0xff9008
-    //% blockId="singleColorTablePicker"
-    //% block="array of $color color"
-    //% color.shadow="colorindexpicker" color.defl=1
-    export function createSingleColorTable(color: number): number[] {
-        return [color]
     }
 
     /**
@@ -199,7 +135,7 @@ namespace effects {
     //% inlineInputMode=inline
     //% blockId="createSingleColorEffectData"
     //% block="preset effect $color $shape|| $size px wide"
-    //% color.shadow="colorindexpicker"
+    //% color.shadow="colorindexpicker" color.defl=5
     //% size.min=20 size.max=100 size.defl=50
     export function createSingleColorEffectData(
         color: number,
@@ -258,7 +194,7 @@ namespace effects {
      * Start an explosive effect at a position on the stage
      */
     //% inlineInputMode=inline
-    //% group="Create"
+    //% group="Create" color=0x4b7bec
     //% blockId="createExplosiveEffectAtPosition"
     //% blockSetVariable=myAnchor
     //% block="start $effect at x $x y $y for $duration ms|| density $density"
@@ -291,11 +227,43 @@ namespace effects {
         return anchor
     }
 
+    //% inlineInputMode=inline
+    //% group="Create" color=0x4b7bec
+    //% block="start $effect at x $x y $y for $duration ms|| density $density"
+    //% blockAliasFor="effects.createExplosiveEffectAtPosition"
+    //% effect.shadow=variables_get effect.defl=myEffect
+    //% x.shadow="positionPicker" x.defl=75
+    //% y.shadow="positionPicker" y.defl=55
+    //% duration.shadow="timePicker" duration.defl=100
+    //% density.min=10 density.max=50 density.defl=20
+    export function __startExplosiveEffectAtPosition(
+        effect: EffectData,
+        x: number,
+        y: number,
+        duration: number,
+        density: number = 20,
+    ): void {
+        const anchor = { x: x, y: y }
+        createCircularEffect(
+            anchor,
+            duration,
+            effect.colorLUT,
+            effect.sizeLUT,
+            calculateDensity(duration, density),
+            effect.duration.min,
+            effect.duration.max,
+            effect.spawn.min,
+            effect.spawn.max,
+            effect.spread.min,
+            effect.spread.max
+        )
+    }
+
     /**
      * Start an explosive effect on a sprite
      */
     //% inlineInputMode=inline
-    //% group="Create"
+    //% group="Create" color=0x4b7bec
     //% blockId="createExplosiveEffectOnSprite"
     //% block="$sprite start $effect for $duration ms|| density $density"
     //% sprite.shadow=variables_get sprite.defl=mySprite
@@ -323,5 +291,66 @@ namespace effects {
             effect.spread.min,
             effect.spread.max
         )
+    }
+
+    /**
+     * Create preset color table
+     */
+    //% group="Colors" color=0xff9008
+    //% blockId="presetColorTablePicker"
+    //% block="array of only $color"
+    export function createPresetColorTable(color: PresetColor): number[] {
+        return PRESET_COLOR_LUT[color]
+    }
+
+    /**
+     * Create single color table
+     */
+    //% group="Colors" color=0xff9008
+    //% blockId="singleColorTablePicker"
+    //% block="array of $color color"
+    //% color.shadow="colorindexpicker" color.defl=5
+    export function createSingleColorTable(color: number): number[] {
+        return [color]
+    }
+
+    /**
+     * Create preset table of sizes based on expected effect shape
+     */
+    //% group="Sizes" color=0xff9008
+    //% blockId="presetSizeTablePicker"
+    //% block="sizes matching shape $shape"
+    export function createPresetSizeTable(shape: PresetShape): number[] {
+        return PRESET_SIZE_LUT[shape]
+    }
+
+    /**
+     * Create a set of numbers that shrinks
+     */
+    //% group="Sizes" color=0xff9008
+    //% blockId="shrinkingTablePicker"
+    //% block="array of numbers shrinking from $max"
+    //% max.min=1 max.max=100 max.defl=16
+    export function createShrinkingSizes(max: number): number[] {
+        const result = []
+        for (let size = max; size > 0; size--) {
+            result.push(size)
+        }
+        return result
+    }
+
+    /**
+     * Create a set of numbers that grows
+     */
+    //% group="Sizes" color=0xff9008
+    //% blockId="growingTablePicker"
+    //% block="array of numbers growing to $max"
+    //% max.min=1 max.max=100 max.defl=16
+    export function createGrowingSizes(max: number): number[] {
+        const result = []
+        for (let size = 1; size <= max; size++) {
+            result.push(size)
+        }
+        return result
     }
 }
