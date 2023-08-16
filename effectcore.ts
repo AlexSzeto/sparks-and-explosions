@@ -63,7 +63,9 @@ namespace effects {
         ) {
             super()
             initCache()
+            this.colorLifespanLUT = this.colorLifespanLUT.slice()
             this.colorLifespanLUT.reverse()
+            this.sizeLifespanLUT = this.sizeLifespanLUT.slice()
             this.sizeLifespanLUT.reverse()
             this.sizeSlice = this.maxLifespan / this.sizeLifespanLUT.length
             this.colorSlice = this.maxLifespan / this.colorLifespanLUT.length
@@ -171,7 +173,7 @@ namespace effects {
             factory
         )
 
-        src.lifespan = lifespan
+        src.lifespan = Math.max(50, lifespan- maxPLifespan)
         return src
     }
 }

@@ -88,51 +88,54 @@ namespace effects {
         )
     }
 
+    const PRESET_COLOR_LUT = [
+        [1, 5, 4, 2, 10, 10],
+        [1, 1, 1, 9, 9, 6, 8],
+        [5, 7, 7, 6, 6, 8],
+        [1, 5, 4, 5, 1, 5, 1, 5, 1, 5, 4],
+        [10, 10, 12],
+        [1, 1, 13, 11]
+    ]
+
     /**
      * Create effect using preset settings
      */
     //% inlineInputMode=inline
     //% blockId="createPresetEffectData"
     //% block="effect $color $shape|| $size px wide"
-    //% size.min=10 size.max=100 size.defl=48
+    //% size.min=20 size.max=100 size.defl=50
     export function createPresetEffectData(
         color: PresetColor,
         shape: PresetShape,
-        size: number = 48,
+        size: number = 50,
     ) {
-        const colorLUT = [
-            [1, 5, 4, 2, 10, 10],
-            [1, 9, 9, 6, 8, 8],
-            [5, 7, 7, 6, 6, 8],
-            [1, 1, 5, 5, 4, 14],
-            [3, 11, 11, 10, 10, 12],
-            [1, 1, 13, 13, 3, 11]
-        ][color]
+        const colorLUT = PRESET_COLOR_LUT[color]
         const radius = Math.floor(size / 2)
+        const pmax = radius * 0.75
         switch (shape) {
             case PresetShape.spark:
                 return new EffectData(
                     colorLUT,
-                    [6, 4, 2, 1],
-                    new NumberRange(0, Math.floor(size * 0.25)),
-                    new NumberRange(Math.floor(size * 0.5), Math.floor(size * 0.75)),
+                    [6, 6, 4, 2, 1],
+                    new NumberRange(0, 0),
+                    new NumberRange(12, Math.floor(radius * 1.5)),
                     new NumberRange(300, 400)
                 )
             case PresetShape.explosion:
                 return new EffectData(
                     colorLUT,
-                    [10, 16, 14, 12, 6, 4, 2, 1],
-                    new NumberRange(0, Math.floor(size * 0.50)),
-                    new NumberRange(Math.floor(size * 0.25), Math.floor(size * 0.5)),
-                    new NumberRange(300, 600)
+                    [10, Math.max(16, Math.floor(pmax)), Math.max(14, Math.floor(pmax * 0.5)), 12, 6, 4, 2, 1],
+                    new NumberRange(0, Math.floor(radius * 0.50)),
+                    new NumberRange(Math.floor(radius * 0.50), Math.floor(radius * 0.75)),
+                    new NumberRange(400, 600)
                 )
             case PresetShape.cloud:
                 return new EffectData(
                     colorLUT,
-                    [10, 12, 16, 14, 12, 6, 2, 1],
-                    new NumberRange(0, Math.floor(size * 0.75)),
-                    new NumberRange(Math.floor(size * 0.10), Math.floor(size * 0.25)),
-                    new NumberRange(600, 800)
+                    [4, Math.max(16, Math.floor(pmax)), Math.max(14, Math.floor(pmax * 0.75)), Math.max(12, Math.floor(pmax * 0.5)), 14, 16, 12, 8, 4],
+                    new NumberRange(0, Math.floor(radius * 0.50)),
+                    new NumberRange(Math.floor(radius * 0.33), Math.floor(radius * 0.33)),
+                    new NumberRange(800, 1200)
                 )
         }
     }
@@ -146,7 +149,7 @@ namespace effects {
     //% effect.shadow=variables_get effect.defl=myEffect
     //% x.shadow="positionPicker" x.defl=75
     //% y.shadow="positionPicker" y.defl=55
-    //% duration.shadow="timePicker" $duration.defl=300
+    //% duration.shadow="timePicker" duration.defl=100
     //% density.min=10 density.max=50 density.defl=20
     export function startExplosiveEffectAtPosition(
         effect: EffectData,
@@ -160,7 +163,9 @@ namespace effects {
             duration,
             effect.colorLUT,
             effect.sizeLUT,
-            duration < 500 ? duration / density : density,
+            duration < 1000 
+            ? density / duration * 1000
+            : density,
             effect.duration.min,
             effect.duration.max,
             effect.spawn.min,
